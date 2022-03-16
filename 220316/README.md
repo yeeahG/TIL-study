@@ -26,5 +26,8 @@ A.java → B.java → C.java 형태와 같이 하나의 객체가 여러 타입(
 
 ## 3. 구현된 클래스에 메소드를 추가, 삭제 어떻게 될까요?
 직접 추가 삭제를 해본 결과
-<이미지>
+![오류1](https://user-images.githubusercontent.com/95362504/158567422-d2bf7a66-2b46-4a75-9847-ccc7ed718b08.png)
+
+![오류2](https://user-images.githubusercontent.com/95362504/158567461-36181c38-3241-43b6-b612-216eb0060f5c.png)
+
 위와 같이 인터페이스에 어기게 되면 해당 인터페이스의 규격에 맞게 생성 또는 삭제하라는 오류메시지를 출력한다.
