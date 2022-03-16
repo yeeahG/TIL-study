@@ -18,7 +18,7 @@ BankStatementFactory를 생성후 BankStatementProcessor와 BankStatementTSVPars
 
                         MainApplication → BankStatementFactory → BankStatementParser(+ interface)   →  BankStatementAnalyzer
 
-                                        ↘                 BankStatementProcessor                  ↗
+                                                               ↘       BankStatementProcessor      ↗
 
 ## 2. 인터페이스와 다형성이 뭘까요?
 - 인터페이스
