@@ -2,9 +2,11 @@
 
 ## 1. 제어의 역전이란?
 - 기존 제어 흐름
-MainApplication → BankStatementAnalyzer → BankStatementParser
 
-            ↘   BankStatementAnalyzer → BankStatementProcessor
+
+      MainApplication → BankStatementAnalyzer → BankStatementParser
+
+                      ↘   BankStatementAnalyzer → BankStatementProcessor
 
 
 기존에 Main에게 BankStatementAnalyzer 객체의 생성 요청하던 일을
@@ -12,9 +14,11 @@ BankStatementFactory를 생성후 BankStatementProcessor와 BankStatementTSVPars
 원래 받던 BankStatementAnalyzer에게 전달하여 순서가 역전 된 것을 의미한다.
 
 - 바뀐 제어 흐름
-MainApplication → BankStatementFactory → BankStatementParser(+ interface)   →  BankStatementAnalyzer
 
-                                        ↘        BankStatementProcessor    ↗
+
+                        MainApplication → BankStatementFactory → BankStatementParser(+ interface)   →  BankStatementAnalyzer
+
+                                        ↘                 BankStatementProcessor                  ↗
 
 ## 2. 인터페이스와 다형성이 뭘까요?
 - 인터페이스
