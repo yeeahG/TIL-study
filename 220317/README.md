@@ -24,5 +24,5 @@ ApplicationContext.getBean()으로 얻어질 수 있는 객체는 빈이다.
 : @Controller어노테이션은 MVC패턴에서 Controller클래스에 선언, @Component어노테이션을 써도 상관없다. 하지만 @Controller 어노테이션을 사용함으로 @RequestMapping 등의 추가 어노테이션을 사용 가능
 
 
-### 4. spring_mvc_tutorial의 전반적인 흐름은 어떻게 될까요?
+### 3. spring_mvc_tutorial의 전반적인 흐름은 어떻게 될까요?
          MainController.java init() -> index.jsp -> MainController.java modelAndView() or getBook() -> result.jsp 
