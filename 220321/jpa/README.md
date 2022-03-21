@@ -11,7 +11,7 @@ Exception도 매개변수의 다형성이다.
 JPA가 맞지만 hibernate만이 JPA가 아닙니다.
 <br>
 
-####JPA를 구현한 프레임워크 3가지
+#### JPA를 구현한 프레임워크 3가지
 
 | Hibernate | EclipseLink | DataNucleus  |
 | -----|-------------|--------------|
