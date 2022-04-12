@@ -202,7 +202,7 @@ Team과 포지션이 동일한 선수들을 묶어서 column에 맞는 각각의
 df.loc[df['연봉'].notnull(), '용병'] = df.loc[df['연봉'].notnull(), '연봉'].apply(lambda x:x[-2:] == '달러')
 ```
 ‘달러’로 연봉이 끝나는 선수는 용병으로 정의하고 그 중 연봉의 값이 null 이 아닌 선수만 dataframe으로 정리
-```
+
 
 ### 🔍 예제 - map 표시하기
 ```
