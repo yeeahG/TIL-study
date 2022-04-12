@@ -65,10 +65,10 @@ df1에 df2를 결합하는 것
 on값에 따라 결합 위치가 변경된다
 
 - concat  
-pd.concat([데이터프레임], [데이터프레임])
-단어 그대로 데이터 프레임을 이어붙이는 것
-dataframe의 결합으로 dataframe들을 합치는 것
-append는 index와 column이 없어도 사용 가능하지만 concat은 그럴 수 없다
+pd.concat([데이터프레임], [데이터프레임])  
+단어 그대로 데이터 프레임을 이어붙이는 것  
+dataframe의 결합으로 dataframe들을 합치는 것  
+append는 index와 column이 없어도 사용 가능하지만 concat은 그럴 수 없다  
 
 ```
 stock1
