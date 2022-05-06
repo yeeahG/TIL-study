@@ -1,0 +1,143 @@
+vagrant up -> 전원킴
+
+cmd창 하나 더 열고
+vagrant ssh -> 접속
+
+adduser encore -> 에러
+
+root의 권한을 잠시 빌려온다, 할당한다 ( sudo )
+sudo adduser encore -> encore라는 사용자 추가
+
+sudo passwd encore -> encore 사용자에 패스워드 지정 ( encoco )
+
+su -> 하면 다른 계정 들어감, su만치면 root
+
+su encore -> encore로 
+
+whoami 지금 사용자가 누군지?
+
+pwd -> 현재위치
+
+cd ~ -> 홈 디렉토리? 이동
+
+wget -> 웹에있는 데이터를 다운로드 받아주는 프로그램
+
+yum install wget -> wget 설치
+
+yum install -> app 설치하는 명령어중 하나
+단점인데 단점으로 둘수없는점 : root의 권한이 있어야 실행 가능
+
+encore는 sudo를 사용할 수 없어서
+exit로 나가서
+sudo yum install wget 으로 설치
+
+sudo visudo -> sudo권한 쓸 수 있는 파일?
+(esc) (:q) (엔터)로 나감
+
+vi a.txt
+
+i 누르면 insert 모드 
+밑에 insert가 없으면 그냥 visual모드. 수정불가
+
+insert모드에서 마우스 오른쪽 클릭하면 붙여넣기 실행
+
+: -> 명령어 모드
+
+:set number -> 한줄마다 번호가 새겨짐
+
+:wq -> 기록하고 나가기
+:q! -> 강제로 나가기
+
+:w a.txt -> a.txt에 저장
+
+:q -> 나가기
+
+ls -> 파일의 목록을 보여줌
+
+ls -a -> 파일의 목록을 자세하게 보여줌
+
+파일이나 폴더명 앞에 .이 붙은건 숨겨진 파일
+
+-rw-rw-r--.
+-    rw-  rw- r--.          3개씩 띄어서 봄
+처음에 d 라고 써있으면 디렉토리
+r : read / w : write / x : execute -> 실행가능
+
+예)
+-    rw-           rw-             r--
+소유자권한 그룹의권한 제3자의권한
+
+   r       w      x
+2^2 / 2^1 / 2^0   -> 7 이라하면 권한이 다있다
+
+
+
+파일의소유자 파일의그룹 
+    vagrant       vagrant
+
+-rw-r--r--.  1 vagrant vagrant
+
+
+
+chmod 600 a.txt        
+chmod -> 체인지모드
+600 -> 사용자만 읽고 쓸수있음
+a.txt 는 rw------- 가 됨
+
+chmod 777 a.txt -> 모두 다 사용가능 보안 매우 취약
+
+cd /etc -> etc로 이동
+
+ls -al | grep sudo
+-> 왼쪽의 결과에서 sudo가 있는걸 보여줌
+
+sudoers 잘못 건드리면 부팅이 안되서 root의 권한도 r--
+최권력을 가짐? 최상위권력
+ 
+sudo visudo -> sudoers 파일을 수정할수 있게함 root 권한 필요
+
+:set number
+
+100번째 라인 밑에 빈칸
+101번째라인에 encore	ALL=(ALL)		ALL 입력
+
+:wq 기록하고 나가기
+
+su encore
+sudo yum install vim
+-> 이제 encore 에 sudo 사용 가능해서 yum install 가능
+
+sudo yum update
+
+cd ~ 
+pwd
+
+miniconda랑 database 설치 할거임.
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+미니콘다 다운
+
+ls -al -> Miniconda3~~~~.sh
+
+chmod 764 Miniconda3~~~.sh -> 실행권한 생김
+
+ls -al
+
+./Miniconda3-latest-Linux-x86_64.sh -> 실행
+more -> 빠져나오기 q (엔터 누르고 있어도 되지만 q는 스킵해버림)
+라이센스 동의?  yes 
+해당 폴더에 설치할것인지?  enter
+그러면 설치되다가 conda init?  yes.
+Thank you for installing Miniconda3! 나옴 끝
+
+source ~/.bashrc
+vim ~/.bashrc
+
+python -> 입력하면 버전나오고 Anaconda 제공정보
+
+
+
+종료.
+리눅스 그냥끄면 안됨
+sudo shutdown -h now 해서 종료.
+connection to 127.0.0.1 closed. 라고 나온것보니 꺼짐.
