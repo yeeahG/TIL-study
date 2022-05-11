@@ -1,0 +1,36 @@
+sudo yum install net-tools
+
+
+cd /etc/sysconfig/network-scripts
+
+
+ls -al | grep ifcfg
+
+
+sudo cp ./ifcfg-eth0 ./ifcfg-eth1
+
+
+sudo vi ifcfg-eth1
+
+
+DEVICE="eth1"
+BOOTPROTO=none
+IPADDR=192.168.56.10
+NETMASK=255.255.255.0
+GATEWAY=192.168.56.1
+DNS1=192.168.56.1
+ONBOOT="yes"
+TYPE="Ethernet"
+PERSISTENT_DHCLIENT="yes"
+
+
+sudo yum install mariadb-server –y
+
+
+sudo systemctl start mariadb
+
+
+sudo systemctl enable mariadb
+
+
+sudo shutdown -h now
