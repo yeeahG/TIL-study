@@ -1,0 +1,45 @@
+jupyter notebook --generate-config
+/home/encore/.jupyter/jupyter_notebook_config.py
+
+ipython 실행
+
+from notebook.auth import passwd
+
+passwd()
+encoco
+encoco
+
+'argon2:$argon2id$v=19$m=10240,t=10,p=8$Bft4zg6zsQexcJyNOVUWDw$vT85EDUo+pfZdjd/ACilWFK/2x7U6aqs+aOUBRGo4Qc'
+
+
+cd ~
+pwd
+ll
+ls -al
+cd .jupyter/
+ll
+ls -al
+whoami
+vim jupyter_notebook_config.py
+:set number
+:/password  <- 검색기능
+n누르면 다음찾기 shift + n 누르면 이전찾기
+412번째줄 c.Notebookapp.password
+i눌러서 insert
+주석지우고 위에 argon2머시기 복붙
+
+:/allow_origin
+83번째줄 주석지우고 '*'로 바꾸기  ( c.NotebookApp.allow.origin = '*' )
+
+
+:/open_browser
+401번째줄에 False ( c.NotebookApp.open_browser = False )
+
+:wq 저장하고 나가기
+
+mkdir ~/workspace
+
+cd ~/workspace/
+pwd
+
+jupyter notebook --ip=192.168.1.10
