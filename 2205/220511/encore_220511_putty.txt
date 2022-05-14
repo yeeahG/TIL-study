@@ -1,0 +1,96 @@
+ec2-user
+
+sudo adduser encore
+sudo passwd encore (5555)
+
+su encore
+
+ssh-keygen -t rsa
+cd ~
+ls -al
+cd .ssh
+ll
+
+cat id_rsa
+cat id_rsa.pub
+
+private key 복사해서 저장
+
+puttygen
+-> load (pem)file
+-> save private key
+
+cat id_rsa.pub >> authorized_keys
+chmod 640 ./authorized_keys
+
+------------------------------------
+putty 다시열고 
+아까만든ppk 넣기
+login은 encore 하면 접속완료
+확인후 종료
+------------------------------------
+
+exit
+free -h
+source ~/workspace/venv/bin/activate
+pwd
+
+강사님이 주신 requirement.txt 
+filezilla로 ec2-user폴더에 전송
+
+pip install -r requirements.txt
+
+cd workspace/dog_model_service/
+python3 manage.py runserver 0.0.0.0:8000
+
+주피터로 모델돌려서 결과 확인
+
+----------------------------------------------------
+
+새로운 putty
+ec2-user
+vi start.sh (start는 파일이름 sh는 스크립트?)
+안에 source ~/workspace/venv/bin/activate 넣고
+:wq
+. start.sh 치면 (venv)가상환경으로 바뀜
+
+mkdir test
+ls -al
+rm test  ( 삭제 하는건데 cannot 뜸 )
+rm -rf test  ( -rf (디렉토리지울때, 반복적으로 지울때? 말하면 복잡해진다고하심) )
+ls -al ( 보니까 test 디렉토리 삭제됨 ) *** 
+mkdir test2
+mv test2 test
+ll
+(확인해보니 test2가 test로 이름이 바뀜)
+
+계정에 로그인하면 ( .bashrc )가 먼저 실행됨
+하둡할때 알아야함
+
+cd workspace/
+cd dog_model_service/
+cd api/
+vi views.py
+
+visual모드에서----------------
+dd 누르면 줄 지워짐
+10 + dd 하면 10줄 지워짐
+u 누르면 되돌아가기
+y 복사
+p 붙여넣기
+gg 처음으로
+x 누르면 그부분만 삭제
+shift + g ?
+저장안하고 :q!로 나가기
+-------------------------------
+
+pip install scipy
+
+views.py 강사님꺼 받아서 api폴더에 붙여넣음
+
+cd .. 으로 dog_model_service로 이동
+
+python3 manage.py runserver 0.0.0.0:8000
+주피터에서 모델 돌려보기
+다하고 컨트롤C로 종료 후
+sudo shutdown -h now로 종료

@@ -1,0 +1,142 @@
+putty 에 사용한
+
+putty 설치 :
+https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.76-installer.msi
+
+putty 실행
+
+ec2-user
+
+dnf module -y install python38  <- 권한 부족
+
+sudo dnf module -y install python38
+
+python3 <-설치확인후
+exit()      <- 나가기
+
+cd ~
+mkdir workspace
+cd workspace/
+ls
+python3 -m venv venv
+ls
+
+cd venv/
+ll
+
+cd bin
+ll
+source ./activate
+pip install django
+
+cd ~/workspace/
+mkdir web
+
+cd web
+django-admin
+django-admin startproject mysite
+ls -al
+
+cd mysite
+ls -al
+
+cd mysite/
+ls -al
+pwd
+vi settings.py -> :q
+sudo yum install vim-enhanced
+
+vim settings.py 
+-> 수정 ALLOWED_HOSTS = ['*']
+-> DEBUG = False
+-> ESC :wq
+
+cd ..
+ll
+python manage.py runserver
+
+
+aws 인스턴스 -> 보안 -> 보안그룹 
+-> 인바운드 규칙 -> 규칙추가
+-> 포트범위: 8000 , 사용자지정: Anywhere -> 규칙저장
+
+내 퍼블릭 주소:8000
+
+
+
+
+
+
+
+
+mkdir temp
+cd temp
+python3
+exit()
+whereis python3
+which python3
+python3 -m venv test
+ll
+
+cd test
+ll
+
+cd bin
+source ./activate
+django-admin
+
+pip list
+
+python3 -m venv [이름] <- 이런게 있구나
+
+cd ..
+ll
+cd ..
+cd ..
+source ./venv/bin/activate
+
+
+파일질라 설치 :
+https://download.filezilla-project.org/client/FileZilla_3.59.0_win64_sponsored2-setup.exe
+
+filezilla에서 --------------
+파일 -> 사이트관리자
+new site
+프로토콜 -> SFTP
+호스트 -> 내 aws인스턴스 주소
+포트 -> 22 (22쓰기로해서)
+로그온 유형 -> 키 파일
+사용자 -> ec2-user
+키 파일 -> 내 ppk파일
+연결
+---------------------------
+디렉터리생성 후 안에 모델 넣음
+( model.h5, model.json, dog_model_service )
+업로드
+---------------------------
+
+다시 putty
+
+workspace에서 ( cd workspace )
+ll -> dog_model_service 가 있어야함
+cd dog_model_service
+ll
+python3 ma
+cd model_service/
+
+pip install djangorestframework
+pip install pandas
+pip install tensorflow
+
+(메모리 에러남)
+free
+할당된 메모리로 tensorflow 설치하기 힘듬
+sudo shutdown -h now
+
+aws
+인스턴스변경? t2.xlarge
+용량 늘려서 tensorflow 설치할예정
+
+팀계정말고 개인계정으로 했을시
+작업에 이미지템플릿
+이미지 생성
