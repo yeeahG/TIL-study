@@ -1,0 +1,82 @@
+ec2-user
+hostname (호스트이름이 너무 김)
+sudo hostname (하고싶은이름)
+hostname (다시 확인하니 바뀜)
+sudo systemctl status firewalld ( 방화벽 확인 ? )
+
+sudo yum install firewalld -y ( 방화벽 설치 ? )
+sudo systemctl status firewalld ( 방화벽 상태보기 Active가 dead임 )
+sudo systemctl enable firewalld ( 시스템에 방화벽 등록 시작프로그램)
+sudo systemctl start firewalld ( 스타트 )
+sudo systemctl status firewalld ( history에 !120 ) ( active가 초록색에 running )
+sudo firewall-cmd --list-ports
+sudo yum install mariadb-server -y
+sudo systemctl enable mariadb
+sudo systemctl start mariadb
+sudo systemctl status mariadb
+
+시작하면 실행되는지 확인하려고 재부팅
+sudo reboot
+화면모서리에 오른쪽버튼 -> restart session
+재부팅하니 hostname이 바뀜. 일회용
+sudo hostnamectl set-hostname eheh ( 영구적으로 바뀜 )
+
+enable 해놓은것 확인
+sudo systemctl status firewalld
+sudo systemctl status mariadb
+
+mysql_secure_installation -> 엔터 -> y -> 비번 비번  -> y -> n -> y -> y
+mysql -u root -p -> 비번
+show databases;
+SELECT Host, User from mysql.user;
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '1q2w3e';
+FLUSH PRIVILEGES;
+exit
+
+다운로드 -> https://www.heidisql.com/downloads/releases/HeidiSQL_12.0_64_Portable.zip
+
+sudo firewall-cmd --zone=public --add-port=3306/tcp --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-ports  -> 3306/tcp 나옴
+
+aws에서 보안 규칙추가 3306 모든유저
+
+heidisql에서 신규만들고 ip쓰고 아까 비밀번호 쓰고 접속
+
+mariadb보니까 latin ~~ 뭐라고 되어있어서 
+한글 인식 못하니까 바꾸려고 putty에서 작업 할꺼임.
+cd /etc/my.cnf.d
+sudo vi client.cnf
+-> client 밑에 default-character-set=utf8 입력
+-> :wq
+
+
+
+sudo vi mariadb-server.cnf
+-> client 밑에
+character-set-server = utf8
+collation-server = utf8_general_ci
+init_connect = set names utf8 입력
+-> :wq
+
+sudo vi mysql-clients.cnf
+-> mysql, mysqldump 밑에 
+default-character-set=utf8 입력
+-> :wq
+
+sudo systemctl restart mariadb
+sudo systemctl status mariadb
+
+heidiSQL로 가서 
+CREATE DATABASE encore;
+
+USE encore;
+
+CREATE TABLE test(
+	id VARCHAR(10) DEFAULT NULL
+)
+드래그하고 Ctrl + F9 하면 그것만 실행
+하고 test테이블로 가서 조합을 보면
+utf8_general_ci 로 되어있음. 이제 한글 가능
+
+
