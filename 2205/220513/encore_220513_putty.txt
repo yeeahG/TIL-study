@@ -1,0 +1,72 @@
+모델 문제가 있어서 이미지의 사이즈를 96으로 바꿨다.
+그리고 views.py를 다시 수정하고 하드코딩 되어있는부분을
+img_size로 바꾸었고
+통신이 안되어서 방화벽 문제로 인식하고
+putty에서
+sudo firewall-cmd --zone=public --add-port=8000/tcp --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-ports
+코드를 입력해서 방화벽 설정을 해주고
+python3 manage.py runserver 0.0.0.0:8000 으로 서버를 run시켜
+모델을 다시 검증해보니 성능이 매우 좋았다.
+
+sudo yum install yum-utils -y
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install docker-ce -y
+
+sudo systemctl status docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+sudo docker run -it ubuntu:14.04 ( 우분투 14.04버전 실행 ) ( -it -> 명령어 칠수있게 설정 )
+exit
+sudo docker run -it ubuntu ( 최신으로 다운 )
+cat /etc/issue ( 우분투 버전 )
+exit
+sudo docker run -it ubuntu:14.04
+cat /etc/issue
+exit
+
+sudo docker -v ( 도커버전 )
+sudo docker pull centos:7 ( 이미지를 받아옴 )
+sudo docker imges ( 다운로드받은 이미지 목록 )
+sudo docker create -it centos:7 ( 긴 암호같은게 나옴 )
+
+397edd26f4d6aad53f46a8e90b6eccfdddda7d84bea08ea8ca647f8855bd436e
+
+sudo docker start 긴 암호 붙여넣기 ( 컨테이너 시작 )
+sudo docker attach ( 컨테이너에 들어감 )
+exit
+alias docker="sudo docker" ( docker 라고 쳐도 sudo docker 실행됨 )
+docker ps
+docker ps -a
+docker container prune ( 다 삭제 )
+docker run -it --name myserver ubuntu
+
+Ctrl + p + q ( 잠시 빠져나오기 ) ( exit으로 나오면 컨테이너 종료됨 )
+
+docker attach myserver ( 살아있는 컨테이너만 가능 )
+ls -al
+Ctrl + p + q
+docker ps
+docker rm myserver ( 어떤 에러가 보인다) ( 실행중이어서 )
+docker stop myserver ( 멈추기 )
+docker ps ( 확인 )
+docker ps -a 
+docker start myserver ( 시작 )
+docker ps
+( 이제 실행중인 컨테이너 강제로 지워볼거임 )
+
+docker rm -f myserver ( 강제로 지우기 )
+docker ps ( 지워져서 목록이 없다. )
+docker ps -a
+docker run -it --name webserver ubuntu:14.04
+ifconfig
+Ctrl + p + q
+docker run -it --name webserver2 ubuntu:14.04
+docker ps
+docker ps -a -q
+docker stop $(docker ps -a -q)
+docker ps
+docker rm $(docker ps -a -q)
+docker ps -a
