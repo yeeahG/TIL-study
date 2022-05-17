@@ -1,0 +1,297 @@
+sudo systemctl status docker 
+
+# 시작시 서비스 실행 
+sudo systemctl enable docker 
+
+# 서비스 실행 
+sudo systemctl start docker
+
+# stop 된 컨테이너 삭제 
+docker rm $(docker ps -a -q)
+
+# 호스트 공유 
+docker run -it --name vol_1 -v /home/ec2-user/workspace:/home/testdir_2 alicek106/volume_test
+
+# 볼륨 컨테이너 공유 
+Q : --volumes-from 이게 무슨뜻인가요?
+
+docker run -it --name vol_2 --volumes-from vol_1 ubuntu:14.04
+
+# ec2에서 파일 생성하기 
+cd ~/workspace && echo "hi" > b.txt
+# cd ~/workspace
+# echo "hi" > b.txt
+
+ 
+
+# exit 상태 컨테이너 다시 살리기 
+docker start vol_1
+docker attach vol_1 
+cd /home/testdir_2 && ls
+echo "basic" > c.txt
+
+# host, vol_1, vol_2 에서 testdir_2 확인하기! 
+
+Q. 호스트 - vol_1 - vol_2 이렇게 3개가 연결되어 있는건가요?
+A. Yes
+
+c.txt.를 testdir_2에서 만들도 ec2에서 확인하는거 아닌가요? 
+vol_1에서 삭제하면 host는 남겨져있고, vol_2에서는 삭제되나요
+
+
+
+# ec2에서 아래 명령어 실행 
+cd ~ && mkdir work
+
+
+# 포그라운드(foreground)
+# 현재 화면에서 실행중인 상태.....
+
+# 백그라운드(background) 
+# 현재 화면에서 보이지 않으나... 실행중인 상태 
+# linux에서 실행을 백그라운드로 실행하고 싶으면... 맨 뒤에 & 붙이면 됨 
+
+vim tmp.py
+vi tmp.py
+
+import time
+
+print ("process start")
+
+for x in range(10000):
+    time.sleep(1)
+
+
+
+# 포그라운드에서 실행 
+python3 tmp.py 
+# 다른 작업할수 있는지? 없음 
+
+Ctrl + c 
+
+# 백그라운드에서 실행 
+python3 tmp.py & 
+# 다른 작업할수 있는지? 있음 
+
+# 프로세스
+ps 
+ps -ef | grep python
+
+# 프로세스 강제 종료 
+ kill -9 [pid번호]
+ 
+ 
+
+docker run -d \
+ --name jnb \
+ -e GRANT_SUDO=yes \
+ --user root \
+ -p 8888:8888 \
+ -v /home/ec2-user/work:/home/jovyan/work \
+ jupyter/datascience-notebook
+ 
+ 
+# 보안그룹에 규칙 추가 
+# 8888 추가 
+ 
+docker exec -it jnb /bin/bash
+	
+# password 설정 
+jupyter notebook password
+
+# password 확인하기 
+cat /home/jovyan/.jupyter/jupyter_notebook_config.json
+
+vi /home/jovyan/.jupyter/jupyter_notebook_config.py
+
+
+apt update 
+apt install vim
+vim /home/jovyan/.jupyter/jupyter_notebook_config.py
+
+
+# 명령어 모드 
+set number 
+
+# 명령어 모드 
+/c.NotebookApp.password
+
+# 컨테이너 재시작
+docker restart jnb
+
+# 시스템 모니터링 
+top
+
+# 현재 생성된 볼륨 (저장소)
+docker volume ls 
+
+# 컨테이너의 /root 폴더를 자동으로 볼륨으로 공유 
+docker run -it --name vol_auto -v /root ubuntu:14.04
+
+# 볼륨의 내용 조사 
+docker container inspect vol_auto
+
+# encore라는 이름의 볼륨 만들기 
+docker volume create --name encore
+
+docker run -it --name myvol1 -v encore:/root/ ubuntu:14.04
+echo "Hello" >> /root/volume
+exit 
+
+
+docker run -it --name myvol2 -v encore:/root/ ubuntu:14.04
+cat /root/volume
+
+Q : docker container inspect vol_auto 이거랑 docker inspect encore랑 무슨 차이인가요?
+A : 전자는 컨테이너 이름기준으로 볼륨 조사, 후자는 볼륨이름으로 바로 조사 
+
+Q : docker run -it --name vol_auto -v /root ubuntu:14.04 이건 그냥 컨테이너 만든거죠?
+
+Q : myvol1, myvol2는 안뜨는데 맞는건가요? 
+A : 
+
+local     3f70937ca271c487b22cd8eb1a7d54cc90b73e353bb36a54936d1581059f0d1b
+local     55f6dc8cc001b65741b8eaa4514b71558087009441f21f9e65117b17817a6526
+local     063f8dfcce7e30341aeb63f99e77f81517b90d4f02699ebac7840642748e0094
+local     04072ccd911dbc81770e0028960780ae7264164d19bc1ea2fb448d56bb875b2a
+local     473419d778778783abdc6214ffdf0e0a4ceb899bccbc15b5f6a0d2d8aa258af4
+local     329021293dce263556052631f2c19e50dcb143a8bdf787e1b30c29ee4a2a9345
+local     encore
+
+volume은 어디에 저장되어 있나요?
+/var/lib/docker/volumes/encore/_data
+
+# 해당 폴더에서 하위 폴더 용량 확인 
+du -h --max-depth=1
+
+# 도커 이미지 저장소 
+sudo ls /var/lib/docker/overlay2
+
+# encore 볼륨 확인 하기 
+sudo ls /var/lib/docker/volumes/encore/_data
+sudo cat /var/lib/docker/volumes/encore/_data/volume
+
+# image 조사 
+docker inspect --type image 13b66b487594
+
+# volume 조사 
+docker inspect --type volume encore
+
+# 컨테이너 정보 조사 
+docker container inspect [컨테이너 이름]
+docker container inspect jnb
+
+# 도커 이미지 생성 (layer 생성)
+docker run -it --name commit_test ubuntu:14.04
+# 도커 안에서... 
+echo "test_first" > first.txt
+# 컨테이너 나와서
+docker commit -a 'eheh' -m 'first commit' commit_test commit_test:first
+	           '저자'       '남기고싶은말'
+
+docker images -> commit_test 에 first 확인
+
+# 두번째 커밋 
+docker run -it --name commit_test2 commit_test:first
+echo "test_second" > second.txt
+exit
+docker commit -a 'scw' -m 'second commit' commit_test2 commit_test:second
+docker images로 확인
+
+layers 확인-----------------------------------------
+docker inspect ubuntu:14.04
+docker inspect --type image ubuntu:14.04
+docker inspect --type image commit_test:first
+docker inspect --type image commit_test:second
+-----------------------------------------------------
+----------------------
+강사님 
+
+# 호스트 공유 
+docker run -it --name vol_1 -v /home/ec2-user/workspace:/home/testdir_2 alicek106/volume_test
+
+이거랑 
+
+# 컨테이너의 /root 폴더를 자동으로 볼륨으로 공유 
+docker run -it --name vol_auto -v /root ubuntu:14.04
+
+이거랑
+
+# encore라는 이름의 볼륨 만들기 
+docker volume create --name encore
+docker run -it --name myvol1 -v encore:/root/ ubuntu:14.04
+
+이렇게
+
+3개가 너무 햇갈려요 다 비슷해보이는데 정리해주실 수 있나요?
+세번째에서 볼륨을 호스트와는 공유할 수 없나요?
+
+# 도커 파일 
+# pull official base image
+FROM python:3.8.0-alpine
+
+# set work directory
+WORKDIR /usr/src/app
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN apk update
+RUN apk add postgresql-dev mariadb-dev gcc python3-dev musl-dev zlib-dev jpeg-dev  py-numpy-dev #--(5.2)
+
+COPY . /usr/src/app/
+# install dependencies
+RUN pip install --upgrade pip
+RUN pip install Cython
+RUN pip install -r requirements.txt
+
+
+
+Q : 호스트랑 공유하면 되는데 굳이 볼륨으로 컨테이너끼리 공유하는 이유가 있나요??
+
+# docker compose 
+# docker 서비스마다 각각의 컨테이너 생성하는 것을 권장
+# mysql 컨테이너, 워드프레스 컨테이너 
+# 동적? 정적? 
+version: '3'
+
+services:
+  web:
+    build: ./nginx
+    volumes:
+      - static_volume:/usr/src/app/static
+    ports:
+      - 80:80
+    depends_on:
+      - web
+  was:
+    build: . 
+    command: gunicorn dice.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/usr/src/app/static
+      - ./:/usr/src/app/
+    ports:
+      - 8000:8000
+volumes:
+  static_volume:
+
+
+
+Q : test1이라는 컨테이너를 host랑 공유해서 만들고 --volumes-from 써서 test2 만드는 거랑
+---------------------
+test1이라는 컨테이너를 create volume 써서 만든 볼륨으로 만들고 volumes-from 써서 test2 만드는 거랑 둘다 볼륨을 공유하는거는 맞나요?
+
+docker volume create --name encore2
+
+docker run -it --name test1 -v encore2:/root/ ubuntu:14.04
+
+mkdir encore
+
+docker run -it --name test2 --volumes-from test1 ubuntu:14.04
+
+# encore2 공유가 O
+
+docker run -it --name test3 -v encore2:/root/ ubuntu:14.04
+
+내일 다시.
