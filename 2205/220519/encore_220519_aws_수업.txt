@@ -1,0 +1,282 @@
+# 폴더 생성하고 이동 
+mkdir 2 && cd 2
+
+# cat (문서 보기) 파일 확인 
+## build-in-host.sh는 명령어들을 스크립트로 작성된 파일 
+cat build-in-host.sh
+cat Dockerfile 
+
+# 권한 부여 
+chmod 700 mvnw
+# chmod를 사용해서 실행 권한만 부여 (+)
+# 해당 권한을 뺄때는 - 쓰시면... 
+# +x (전체, u,g,o)
+chmod +x build-in-host.sh
+# 사용자만 실행권한 주기 
+chmod u+x build-in-host.sh
+# 사용자 그룹만...
+chmod ug+x build-in-host.sh
+
+
+# 리눅스 매뉴얼을 보고 싶다면... man 명령어를.... 
+
+# sh 파일을 실행 권한(x)이 없어도 실행하고 싶다면... 
+. build-in-host.sh
+
+# 리눅스 가상환경.... 
+# . start.sh # 파이썬 가상환경을 바로 들어갈수 있게... 
+
+
+# build-in-host.sh 파일을 실행하면 target 생성부터 도커 이미지 생성까지 한번 다 완성 
+# 이미지 크기 확인 
+# |는 왼쪽 결과를 오른쪽으로 전달 
+# head 명령어임... 
+docker images | head -n 5 
+
+#Q # sh 파일을 실행 권한(x)이 없어도 실행하고 싶다면... 
+#. build-in-host.sh
+# 라고 하셨는데 그러면 권한이 있다면 어떻게 실행하나요?
+
+A : 그냥 바로 실행하면 됩니다. 
+    ./build-in-host.sh
+
+
+# 운영체제 권한 문제.... 
+# 지금 현상 
+. build-in-host.sh  실행하면 성공~!!
+./build-in-host.sh  실행하면 실패!!
+
+build-in-host.sh 파일을 수정 
+sudo docker sudo 추가했음... 
+-> 실행하고 성공!!
+
+
+[ec2-user@scw 2]$ docker images
+REPOSITORY                     TAG       IMAGE ID       CREATED         SIZE
+optimal-img                    latest    fea95fca8747   3 minutes ago   148MB
+basic-img                      3.0       2c5311d1a04a   21 hours ago    544MB
+
+
+# 세번째 컨테이너에서 jar 만들기 
+cd ~ && mkdir 3 && cd 3
+
+vim Dockerfile
+# 내용 추가 
+FROM openjdk:8
+LABEL description="Echo IP Java Application"
+EXPOSE 60433
+RUN git clone https://github.com/iac-source/inbuilder.git
+WORKDIR inbuilder
+RUN chmod 700 mvnw
+RUN ./mvnw clean package
+RUN mv target/app-in-host.jar /opt/app-in-image.jar
+WORKDIR /opt
+ENTRYPOINT [ "java", "-jar", "app-in-image.jar" ]
+
+# wq하고 저장하고 나오기 
+
+Q : https://github.com/iac-source/inbuilder.git 이거도 따로 실행해야하나요?
+
+
+
+docker build -t nohost-img .
+
+
+[ec2-user@scw 3]$ docker images | head -n 5
+REPOSITORY                     TAG       IMAGE ID       CREATED          SIZE
+nohost-img                     latest    fac02257e033   50 seconds ago   633MB
+optimal-img                    latest    fea95fca8747   41 minutes ago   148MB
+basic-img                      3.0       2c5311d1a04a   22 hours ago     544MB
+
+
+nohost-img -> 컨테이너 안에서 모두 다 실행 
+
+
+# 4번째 
+cd ~ && mkdir 4 && cd 4
+
+vim Dockerfile
+
+FROM openjdk:8 AS int-build
+LABEL description="Java Application builder"
+RUN git clone https://github.com/iac-source/inbuilder.git
+WORKDIR inbuilder
+RUN chmod 700 mvnw
+RUN ./mvnw clean package
+
+FROM gcr.io/distroless/java:8
+LABEL description="Echo IP Java Application"
+EXPOSE 60434
+COPY --from=int-build inbuilder/target/app-in-host.jar /opt/app-in-image.jar
+WORKDIR /opt
+ENTRYPOINT [ "java", "-jar", "app-in-image.jar" ]
+
+Q : a를 버린다는 내용은 스크립트 안에는 없는 거죠?
+A :  int-build
+
+docker build -t multistage-img .
+
+Q 3폴더에서 git clone 했는데 왜 아무파일도 없나요??
+A : 이미지 안에 /inbuilder 존재 
+
+git clone https://github.com/iac-source/inbuilder.git
+
+
+Q : 근데 이미지만 만들고 컨테이너를 실행하지는 않았는데 그러면 내부적으로 컨테이너를 실행해서 
+    이미지로 만들고 그 컨테이너가 자동으로 삭제되는건가요?
+A :
+
+Q : 폴더 4에서 Dockerfile 만들고 명령어 뭐 치면 되나요
+A : docker build -t multistage-img .
+
+
+Q : 어디 폴더에 생기나요?
+A : /inbuilder
+
+
+Q : 그러면 inbuilder 폴더가 없어지나요?
+A : FROM openjdk:8 AS int-build에 생기고... 여기서 나온 산출물.... 복사감...
+
+
+docker rmi $(docker images -f dangling=true -q)
+or
+docker image prune 
+
+
+# 도커 컴포즈 설치
+sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+sudo chmod +x /usr/local/bin/docker-compose
+
+docker-compose -v
+
+cd ~ && mkdir 5 && cd 5
+  
+vim docker-compose.yml
+
+version: '3.0'
+services:
+  web:
+    image: alicek106/composetest:web
+    ports:
+      - "80:80"
+    links:
+      - mysql:db
+    command: apachectl -DFOREGROUND
+  mysql:
+    image: alicek106/composetest:mysql
+    command: mysqld
+
+alias docker-compose="sudo /usr/local/bin/docker-compose"
+
+
+# 현재 실행중인 컨테이너 중지 
+docker stop $(docker ps -q)
+# 모든 컨테이너 삭제 
+docker rm $(docker ps -q -a)
+
+
+docker-compose up -d
+
+
+# 도커 컴포즈 예제 
+cd ~/6
+
+# yum은 폴더 상관없음 
+sudo yum install unzip -y 
+
+# dsstack-1.zip 파일 압축해제 
+unzip ./dsstack-1.zip
+
+cd dsstack-1
+docker-compose up -d
+
+# 설치하다가 용량 때문에 에러난 분은 아래 명령어로 이미지 삭제 (모든 이미지 삭제)
+ docker rmi $(docker images -q)
+
+본인 ip:8888 접속 
+
+
+6team123!
+
+
+#현재 사용중인 compose 컨테이너 종료 
+docker-compose down 
+# 실행 
+docker-compose up
+
+vim ~/.bashrc
+# 아래 코드 추가 
+alias docker-compose="sudo /usr/local/bin/docker-compose"
+
+
+source ~/.bashrc
+
+# 리눅스 find 명령어 -> 파일 찾기 
+find ./ -name "*require*"
+
+cat 
+# 2>/dev/null
+find / -name "*require*" 2>/dev/null
+
+
+# 메모리 swap off
+sudo swapoff -a
+sudo setenforce 0
+
+# sed 예제 
+echo "hi" > a.txt
+sed 's/hi/Hello/' ./a.txt
+sed -i 's/hi/Hello/' ./a.txt
+
+
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+
+cat <<EOF> ./b.txt
+abcdefg
+hijk...
+EOF
+
+sudo yum install vim
+vim config.sh
+
+
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+Q : 해당 파일의 맨 밑에 추가한다는 건가요?
+>>
+
+
+
+chmod +x config.sh
+sudo ./config.sh
+
+
+
+cat /etc/yum.repos.d/kubernetes.repo
+cat /etc/sysctl.d/k8s.conf
+
+
+
+sudo modprobe br_netfilter
+
+
+
+
+# sudo yum install kubectl -y
+# sudo yum install kubelet -y
+# sudo yum install kubeadm -y
