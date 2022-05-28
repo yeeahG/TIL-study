@@ -1,0 +1,118 @@
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
+
+sudo yum install vim-enhanced -y
+sudo yum install wget -y
+
+
+
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install -y docker-ce
+sudo systemctl enable --now docker
+
+date
+- 시간 맞춤
+sudo timedatectl set-timezone Asia/Seoul
+
+- swap 끔
+sudo swapoff -a
+
+- 보안설정 끔
+sudo setenforce 0
+- 영구적으로 
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+- 상태확인
+sestatus
+
+vim install.sh
+------
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes] 
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64   
+enabled=1
+gpgcheck=1 
+repo_gpgcheck=1 
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg 
+EOF
+
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+---- 내용 삽입
+
+- 실행하기위해 권한 줌
+chmod +x install.sh
+
+- 실행
+sudo ./install.sh
+
+sudo sysctl --system
+
+sudo modprobe br_netfilter
+
+lsmod | grep br_netfilter ( 확인 )
+
+- 쿠버네티스 설치
+sudo yum install kubectl-1.18.4 -y
+sudo yum install kubelet-1.18.4 -y
+sudo yum install kubeadm-1.18.4 -y
+
+filezilla로 pem파일 ec2-user로 옮기기
+
+chmod 600 encore_key.pem
+
+vim ~/.bashrc
+--------- 밑에 추가---------
+alias m-k8s="ssh -i ~/awseh.pem ec2-user@m-k8s"
+alias w1-k8s="ssh -i ~/awseh.pem ec2-user@w1-k8s"
+alias w2-k8s="ssh -i ~/awseh.pem ec2-user@w2-k8s"
+alias w3-k8s="ssh -i ~/awseh.pem ec2-user@w3-k8s"
+------------------------------
+source ~/.bashrc
+
+이미지만들고
+인스턴스 이미지로 4개생성
+
+172.31.30.37	m-k8s
+172.31.30.61	w1-k8s
+172.31.30.178	w2-k8s
+172.31.30.205	w3-k8s
+	
+마스터로 쓸 ip로 putty 들어감
+sudo hostnamectl set-hostname m-k8s
+
+sudo vim /etc/hosts 들어가서
+ip4개, 명칭 넣고 나오기
+
+sudo systemctl enable --now kubelet
+containerd config default > config.toml
+sudo cp ./config.toml /etc/containerd/config.toml
+sudo systemctl restart containerd
+
+sudo kubeadm init --token 123456.1234567890123456 --token-ttl 0 --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=172.31.30.37
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+sudo systemctl status kubelet
+
+kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml
+
+kubectl get nodes
+
+kubectl get pods -n kube-system
+
+ssh -i ~/awseh.pem ec2-user@w1-k8s 이동
+-- 워크노드
+sudo hostnamectl set-hostname w1-k8s 이름 바꾸기
+sudo systemctl enable --now kubelet
+
+containerd config default > config.toml
+sudo cp ./config.toml /etc/containerd/config.toml
+sudo systemctl restart containerd
+
+sudo kubeadm join --token 123456.1234567890123456 --discovery-token-unsafe-skip-ca-verification 172.31.30.37:6443
