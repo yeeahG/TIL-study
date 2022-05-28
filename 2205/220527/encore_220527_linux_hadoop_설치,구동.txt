@@ -1,0 +1,114 @@
+# ec2에서 본인의 인스턴스 시작 
+# 하둡 설정 파일이 있는 폴더 
+cd ~/hadoop/etc/hadoop/
+
+# hdfs-site.xml 파일 찾기 
+ls | grep hdfs
+
+# 파일 수정 
+vim hdfs-site.xml
+
+# dfs.replication 값을 3으로 수정 
+
+# 하둡 3에서는 slave 대신 wokers 이름으로 대체 
+vim workers
+# datanode3 추가 
+
+# 설정된 파일을 다른 인스턴스에 복사하기
+scp * namenode:/home/hadoop/hadoop/etc/hadoop/
+scp * secondnode:/home/hadoop/hadoop/etc/hadoop/
+scp * datanode3:/home/hadoop/hadoop/etc/hadoop/
+
+# datanode3한테 명령어 전송 
+ssh datanode3 ls ~/
+
+# data 폴더 없는 분은 생성 
+ssh datanode3 mkdir ~/data 
+
+#########################
+실행하기 : HDFS -> YARN -> MR-History Server​
+	namenode   : start-dfs.sh
+	secondnode : start-yarn.sh
+	namenode   : mr-jobhistory-daemon.sh start historyserver​
+			                         
+종료하기 : YARN -> MR-History Server -> HDFS​
+	secondnode : stop-yarn.sh
+	namenode   : mr-jobhistory-daemon.sh stop historyserver​
+	namenode   : stop-dfs.sh
+#########################
+
+hadoop namenode -format (운영중에 format X)
+ssh namenode start-dfs.sh
+ssh secondnode start-yarn.sh
+ssh namenode mr-jobhistory-daemon.sh start historyserver
+
+## 확인
+ssh namenode jps
+ssh secondnode jps
+ssh datanode3 jps
+
+[hadoop@client hadoop]$ cat a.sh
+echo "======================="
+ssh namenode rm -rf ~/data
+ssh namenode mkdir ~/data
+ssh secondnode rm -rf ~/data
+ssh secondnode mkdir ~/data
+ssh datanode3 rm -rf ~/data
+ssh datanode3 mkdir ~/data
+
+
+# 보안 그룹 설정? 
+
+#### 본인 네임노드 ip 
+http://54.180.81.186:50070/
+
+# client에서 작업 
+# 하둡 안에 폴더 생성 
+hdfs dfs -mkdir /encore
+
+http://13.209.64.5:50070/ 에서 폴더생성 확인해도되고
+리눅스로 hdfs dfs -ls / 확인가능
+
+# encore폴더에 파일 저장하기 
+hdfs dfs -put ~/hadoop/etc/hadoop/*.xml /encore
+
+# mapreduce 동작시키기!!
+
+hadoop jar ~/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.1.jar grep /encore /output2 'dfs[a-z.]+'
+ 
+ 
+hdfs dfs -ls /output2
+
+hdfs dfs -cat /output2/part-r-00000
+
+# 수업듣는 여러분 집에 있는 숟가락!! 
+# 숟가락의 주인이 강사라고 가정!! 
+# 숟가락의 개수를 파악 
+# 제가 여러분들 집에 돌면서 숟가락 개수를 세면 되죠... 
+####### map reduce 
+# -> 여러분들에게 각자 집에 있는 숟가락 개수를 파악해서 알려달라고 하는게 좋겠어요? 
+# 각자 집에서 숟가락 개수를 파악할꺼죠? (mapper)
+# 숟가락 (데이터), 여러분들 집이(datanode)
+# mapper(여러분들..) 
+# 전체 숟가락 개수 파악(reducer)
+
+
+## 맵리듀스 예제를 위한 데이터 수집 
+# https://news.naver.com/main/list.naver?mode=LS2D&mid=shm&sid1=101&sid2=259
+# 네이버 경제 섹션의 기사 1일주일치 수집하기!!!! 
+# 옵션... 추가적으로... 속도..(multiprocess)
+
+# 오늘 이후 작업 
+1. 하둡 설치 ~ 구동까지 복습 or 
+2. 네이버 기사 수집하는 코드 작성 
+
+#### 하둡 시작 하기 (client에서 )
+ssh namenode start-dfs.sh
+ssh secondnode start-yarn.sh
+ssh namenode mr-jobhistory-daemon.sh start historyserver
+
+ #### 하둡 종료 하기 (client에서 )
+ ssh secondnode stop-yarn.sh
+ ssh namenode mr-jobhistory-daemon.sh stop historyserver
+ ssh namenode stop-dfs.sh 
+ 
