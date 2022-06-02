@@ -1,0 +1,214 @@
+# 등록된 배치 확인 
+# 규칙적으로 프로그램 실행해야 할 때 리눅스에서는 crontab 
+crontab -e
+# 참고 
+https://jdm.kr/blog/2
+
+# 하둡 구동 
+. start.sh
+. check.sh
+# 프로세스 잘 떠 있는지 확인하고 
+hive
+
+# hive가 실행이 안되시는 분들은 bashrc 파일 확인
+vim ~/.bashrc
+
+# HIVE_HOME PATH 위에 있어야지 정상동작!!! 
+export HIVE_HOME=/home/hadoop/hive
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin:$HIVE_HOME/bin
+
+source ~/.bashrc
+echo $HIVE_HOME
+
+# putty 창에서 오른쪽 버튼 클릭해서 duplicate session 클릭
+# 지금 같은 세션이 하나 더 생깁니다.
+
+# hdfs (하둡) naver폴더 파일 리스트 확인하기 
+hdfs dfs -ls /naver/
+
+
+# hive table 생성 
+CREATE TABLE FILES (line STRING);
+
+LOAD DATA INPATH '/naver/*' OVERWRITE INTO TABLE FILES;
+
+# /naver/폴더에 파일이 없는 분들은 
+# hive 
+SELECT * FROM FILES LIMIT 5;
+
+#  ' ' 기준으로 분리 
+SELECT explode(split(line, ' ')) AS word FROM FILES;
+
+# CREATE TABLE --> user/hive/warehouse/databasename.db/tablename/ 
+# CREATE TABLE --> /user/hive/warehouse/word_counts
+CREATE TABLE word_counts AS
+SELECT word, count(1) AS count FROM
+(SELECT explode(split(line, ' ')) AS word FROM FILES) w
+GROUP BY word
+ORDER BY word;
+
+# word_counts 테이블 값 확인 
+select * from word_counts order by count desc limit 10;
+
+########################################
+##### 파이썬 코드로 맵리듀스 구동하기### 
+# u.data와 jar파일 업로드 
+# /home/hadoop/
+
+
+# mrjob 설치 
+# 파이썬 맵리듀스을 실행할수 있는 모듈 
+sudo pip3 install mrjob==0.7.4
+
+# hdfs에 폴더 만들기
+hdfs dfs -mkdir /movielens
+
+hdfs dfs -put u.data /movielens/
+
+# hadoop-streaming-3.2.1.jar의 정체? 
+# Java 이외의 언어로 MapReduce 실행시켜주는 유틸리티!!! 
+vim encore.py
+
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+
+class Encore(MRJob):
+    def steps(self):
+        return [
+                MRStep(mapper=self.mapper_get_ratings,
+                       reducer=self.reducer_count_ratings)
+            ]
+
+    def mapper_get_ratings(self, _, line):
+        (userID, movieID, rating, timestamp)=line.split("\t")
+        yield rating, 1
+
+    def reducer_count_ratings(self, key, value):
+        yield key, sum(value)
+
+
+if __name__ == "__main__":
+    Encore.run()
+
+    
+python3 encore.py u.data
+# python3 에서....
+######################
+"1"     6110
+"2"     11370
+"3"     27145
+"4"     34174
+"5"     21201
+######################
+# hadoop에서 구동
+python3 encore.py -r hadoop --hadoop-streaming-jar ./hadoop-streaming-3.2.1.jar u.data
+
+python3 encore.py -r hadoop --hadoop-streaming-jar ./hadoop-streaming-3.2.1.jar hdfs:///movielens/u.data
+"1"     6110
+"2"     11370
+"3"     27145
+"4"     34174
+"5"     21201
+
+Q : 두개의 차이가 뭔지 다시 말씀해 주실 수있나요?? 
+    그냥 하나는 로컬 데이터 사용하고 하나는 hdfs에 있는 데이터 사용하는 차이로 밖에 안느껴져요
+    -> 파이썬에서 맵리듀스 구동, 다른 하나는 하둡에서 맵리듀스 구동 
+
+Q : 네 근데 hive 하다가 이거를 하는게 hive와 연결이 있어서 그런가요?? hive는 끝난건가요?
+   -> 사용자 SQL -> 내부적으로 맵리듀스 
+
+
+
+# 국토부 데이터 업로드 
+unzip "국토부 실거래가.zip"
+# 하둡 저장소에 apt 폴더 생성 
+hdfs dfs -mkdir /apt
+
+hdfs dfs -put *.csv /apt/
+
+# 확인하기
+hdfs dfs -ls /apt/
+
+# client 에서 csv파일 지우기 
+rm *.csv
+
+# 오전에 드린 파일은 
+euc-kr
+
+# 지금 드린 파일은 utf-8
+# 오전에 hdfs 에 올린 폴더 삭제 
+hdfs dfs -rmr /apt
+hdfs dfs -mkdir /apt2
+
+hdfs dfs -put *.csv /apt2/
+
+# EXTERNAL은 HDFS에 존재하는 데이터를 기반으로 데이터를 생성 
+# 파일이 삭제되면... 데이터 X 
+CREATE EXTERNAL TABLE IF NOT EXISTS apt (
+sigungu STRING,
+bunji   STRING,
+MainNumber STRING,
+PartNumber STRING,
+complex   STRING,
+area      FLOAT,
+con_month STRING,
+con_day   STRING,
+amount    INT,
+apt_floor STRING,
+con_year  STRING, 
+road_name STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+   "separatorChar" = ",",
+   "quoteChar"     = "\""
+)  
+LOCATION '/apt2'
+tblproperties ("skip.header.line.count"="16");
+
+
+
+# 데이터 들어갔는지 확인 
+select * from apt limit 5;
+
+Q : 지금 쿼리 날린거는 하둡에 저장된것이 아니라 하이브 위에 mysql에 저장되는 테이블,, 인가요?,, 헷갈리네여 ; ㅎㅎㅎㅎ
+
+# hdfs /atp2/ 안에 있는 csv 파일들을 삭제 
+# hive에서 select * from apt limit 5; 실행하니...
+# hive> select * from apt limit 5;
+# OK
+
+
+http://hortonworks.com/wp-content/uploads/2016/05/Hortonworks.CheatSheet.SQLtoHive.pdf
+
+# 건수 조회 
+select count(*) from apt;
+
+
+# 쿼리
+select max(CAST(regexp_replace(amount, ',' , '') AS INT)) from apt;
+
+# 위에서 뽑은 가장 큰 금액의 아파트 출력!
+select * from apt where CAST(regexp_replace(amount, ',' , '') AS INT) = (select max(CAST(regexp_replace(amount, ',' , '') AS INT)) from apt);
+
+CREATE VIEW apt_view2 AS select split(sigungu, " ")[0] as si, 
+                                split(sigungu, " ")[1] as gu, 
+                                split(sigungu, " ")[2] as dong, 
+                                area, con_year, con_month, con_day, CAST(regexp_replace(amount, ',' , '') AS INT) as amount, apt_floor  from apt;
+
+select * from apt_view2 limit 5;
+
+desc apt_view2;
+
+select gu, avg(amount) from apt_view2 where si = '서울특별시' group by gu;
+
+
+select gu, avg(amount) as avg_total from apt_view2 where si = '서울특별시' group by gu order by avg_total;
+
+
+
+
+
+
+
+
+
