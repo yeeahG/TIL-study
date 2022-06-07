@@ -1,0 +1,231 @@
+https://codeshare.io/# hadoop 로그인 
+su hadoop 
+
+# hadoop home 이동 
+cd ~
+
+# 스파크 다운로드 
+wget https://dlcdn.apache.org/spark/spark-3.2.1/spark-3.2.1-bin-hadoop3.2.tgz
+
+# 압축풀기 
+tar xvzf spark-3.2.1-bin-hadoop3.2.tgz
+
+# 압축을 풀면.... spark-3.2.1-bin-hadoop3.2
+# 디렉터리명 변경 
+mv ./spark-3.2.1-bin-hadoop3.2 ./spark
+
+# 파일질라 실행하고 아래 3개의 파일 conf 폴더에 복사
+slaves, spark-defaults.conf spark-env.sh
+/home/hadoop/spark/conf에 복사 
+
+hive-site.xml 파일을
+/home/hadoop/hive/conf에 복사 (덮어쓰기)
+
+# bashrc 수정
+vim ~/.bashrc 
+
+# 추가 
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HADOOP_HOME/lib/native
+export SPARK_HOME=/home/hadoop/spark
+export SPARK_CONF_DIR=/home/hadoop/spark/conf
+
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin:$HIVE_HOME/bin:$SQOOP_HOME/bin:$SPARK_HOME/bin:
+
+# 파일 갱신 
+source ~/.bashrc 
+
+# 하둡 구동 
+
+
+spark-shell
+
+# client public ip의 4040 포트 
+http://[client의 public ip]:4040
+
+
+ctrl + D 
+
+
+# jar 파일 복사 
+hdfs dfs -mkdir -p /user/hadoop/spark_jars
+hdfs dfs -put /home/hadoop/spark/jars/* /user/hadoop/spark_jars
+
+# 확인 
+hdfs dfs -ls /user/hadoop/spark_jars/
+
+# jupyter 설정 
+1. miniconda 다운로드 
+cd ~ && wget https://repo.anaconda.com/miniconda/Miniconda3-py38_4.12.0-Linux-x86_64.sh
+
+sh ./Miniconda3-py38_4.12.0-Linux-x86_64.sh
+
+# 설치 ~~ 
+Enter -> q -> yes -> enter -> yes
+
+source ~/.bashrc
+
+#################################
+(base) [hadoop@client ~]$
+#################################
+
+
+# Jupyter 설치 
+conda install jupyter
+
+# ipython
+from notebook.auth import passwd
+
+passwd()
+#123
+'argon2:$argon2id$v=19$m=10240,t=10,p=8$u0g+XCViWylvn3tQr9ApBQ$Pm61REHAscwkcLQFBxy7at6uPB6f/x1yA9Ed4Z+k8uw'
+
+# jupyter notebook 설정 파일 생성 
+jupyter notebook --generate-config
+
+cd .jupyter
+vim jupyter_notebook_config.py
+
+# vim에서 검색 
+:/c.NotebookApp.allow_origin
+# 모든 ip 허용 
+c.NotebookApp.allow_origin = '*'
+
+# 아래 검색하고 
+/c.NotebookApp.open_browser
+c.NotebookApp.open_browser = False
+
+# 아래 검색 
+/c.NotebookApp.password
+c.NotebookApp.password = 'argon2:$argon2id$v=19$m=10240,t=10,p=8$LIOb6etFfmicQOaes/84ig$zj02K39RWsjD0UDmktVvw5SMJSqVAlbVDRWE2VLw+NQ'
+
+
+# 아래 검색 
+/c.NotebookApp.notebook_dir
+c.NotebookApp.notebook_dir = '/home/hadoop/spark_work/'
+
+# 저장하고 나오기!!!
+
+# bashrc 수정 
+vim ~/.bashrc
+
+export PYSPARK_DRIVER_PYTHON=jupyter
+export PYSPARK_DRIVER_PYTHON_OPTS='notebook --ip=0.0.0.0'
+
+# bashrc update 
+source ~/.bashrc 
+
+# spark_work 폴더 만들기 
+mkdir ~/spark_work
+
+# pyspark 실행 
+pyspark
+
+# fore-ground를  back-ground 로 변경 
+
+pyspark &
+
+# 백그라운드에서 process를 종료 
+kill -9 프로세스ID(번호)
+
+# 번호를 내가 모른다. 
+ps -ef | grep [내가 찾고 프로그램이름]
+ps -ef | grep python
+
+
+
+http://[client의 public ip]:8888
+
+# 노트북에서 
+
+myRange = spark.range(1000).toDF('number')
+
+
+myRange.show(5)
+
+
+# pyspark 실행 
+pyspark --master yarn --num-executors 3
+
+
+Q : pyspark --master yarn --num-executors 3 이거를 secondnode로 실행하는건가요?
+-> client public ip : 4040 접속하면 secondnode의 주소로 redirect로 됩니다. 
+
+
+
+# Executor의 Python 버전 맞추기 
+# scp는 파일전송 
+# client에서 namenode, secondnode, datanode3에 파일전송  
+scp Miniconda3-py38_4.12.0-Linux-x86_64.sh namenode:/home/hadoop/
+scp Miniconda3-py38_4.12.0-Linux-x86_64.sh secondnode:/home/hadoop/
+scp Miniconda3-py38_4.12.0-Linux-x86_64.sh datanode3:/home/hadoop/
+
+# namenode, secondnode, datanode3로 이동해서 miniconda 설치하기!!!
+
+# 설치가 끝난분들은...
+pyspark --master yarn --num-executors 3
+
+# 주피터 노트북 파일을 새롭게 open
+###########
+
+from pyspark import SparkConf, SparkContext
+
+sc = SparkContext.getOrCreate();
+
+lines = sc.textFile("./fakefriends.csv")
+
+
+def parseLine(line):
+    fields = line.split(',')
+    age = int(fields[2])
+    numFriends = int(fields[3])
+    return (age, numFriends)
+
+
+rdd = lines.map(parseLine)
+totalsByAge = rdd.mapValues(lambda x: (x, 1)).reduceByKey(lambda x, y: (x[0] + y[0], x[1] + y[1]))
+averagesByAge = totalsByAge.mapValues(lambda x: x[0] / x[1])
+results = averagesByAge.collect()
+for result in results:
+    print(result)
+    
+    
+    
+###########
+# 아래 파일을 수정 
+vim ~/spark/conf/spark-env.sh
+# 아래 내용 추가 
+# vim에서 제일 아래로 이동할려면 대문자 G 키보드에서 치시면... 맨 아래로 이동 
+# 다시 최상위 라인으로 이동할려면 gg 
+export PYSPARK_PYTHON=/home/hadoop/miniconda3/bin/python
+
+
+
+
+
+# 다시 실행 
+pyspark --master yarn --num-executors 3
+
+# test 코드 실행 
+
+hdfs dfs -put fakefriends.csv /user/hadoop/
+# 에러 없이 정상적으로 출력되어야 함 !!! 
+
+
+*********************
+에러나서
+putty 새로키고 
+hdfs dfs -put fakefriends.csv /user/hadoop/
+하고 다시 코드실행하니까 됨.
+**********************
+
+
+
+
+
+
+
+
+
+
+
+
