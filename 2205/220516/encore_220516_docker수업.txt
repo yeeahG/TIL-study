@@ -1,0 +1,123 @@
+sudo systemctl status docker
+
+(active 상태가 아니면
+sudo systemctl start docker)
+
+docker run -it --name myweb -p 80:80 ubuntu:14.04
+하기위해
+
+# vi로 bashrc 환경파일 들어가기 
+vi ~/.bashrc 
+
+# 해당 파일에 추가 
+alias docker="sudo docker"
+
+tty 터미널
+source ~/.bashrc (갱신)
+
+이제 다시 docker run -it --name myweb -p 80:80 ubuntu:14.04 하면 됨.
+
+ls -al
+.bashrc 는 세션이 열결될때마다.
+.bash_profile은 로그인이 될때마다?
+
+#참고
+# echo 명령어를 통한 환경 변수 출력
+# $는 환경변수를 의미
+echo $PATH
+
+docker run -it --name myweb -p 80:80 ubuntu:14.04
+
+# 도커 들어와서.. 
+apt-get update 
+apt-get install apache2 -y
+
+# 아파치 서버 실행하기
+service apache2 status
+service apache2 start
+
+# 인스턴스에서 80번 포트 추가
+# 본인 ip 주소를 브라우저 실행 
+
+# 현재 사용중인 드라이브 용량 확인하기
+df -h
+
+# mysql 서버 구동
+docker run -d --name wordpressdb -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress mysql:5.7
+docker ps ( mysql 나와야함 )
+
+# wordpress 
+docker run -d -e WORDPRESS_DB_USER=root -e WORDPRESS_DB_PASSWORD=password -e WORDPRESS_DB_NAME=wordpress --name wordpress --link wordpressdb:mysql -p 80:80 wordpress
+
+내 인스턴스 ip 들어가보면 워드프레스 나옴
+
+# host 파일 위치 
+C:\Windows\System32\drivers\etc
+
+
+
+
+
+
+
+다른 putty
+
+# mysql 설치된 wordpressdb에 들어가기!! 
+docker exec -it wordpressdb /bin/bash
+exit
+docker ps
+( run이 아니고 exec으로 하니까 exit 해도 종료안됨 )
+
+# 컨테이너 안에서 ( docker exec -it wordpressdb /bin/bash )
+mysql -u root -ppassword
+use wordpress;
+show tables;
+select * from wp_users;
+
+exit
+exit
+docker ps -q
+
+# 현재 실행중인 컨테이너 한번에 종료하기!!
+docker stop $(docker ps -q) 
+( 다 종료되서 주의 )
+# 모든 컨테이너(stop...)삭제
+docker rm $(docker ps -q -a)
+( 다 지움 !!!! )
+
+mkdir mydata
+cd mydata
+pwd -> ( /home/ec2-user/mydata )
+docker run -d --name wordpressdb_hostvol -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress -v /home/ec2-user/mydata:/var/lib/mysql mysql:5.7
+(매핑)
+docker ps -> 업 되어있음
+ll
+
+docker stop wordpressdb_hostvol
+docker rm wordpressdb_hostvol
+( 컨테이너 삭제해도 그대로 남아있음. mysql? )
+
+cd ..
+echo "hello" >> hello && echo "hello2" >> hello2
+ll
+
+# 파일도 v 옵션을 사용하여 공유할수 있음
+docker run -it --name file_volum -v /home/ec2-user/hello:/hello -v /home/ec2-user/hello2:/hello2 ubuntu:14.04
+ls /
+cat hello
+cat hello2
+vi hello ( Hi! 붙이고 저장 )
+Ctrl p q 
+vi hello
+( 바뀐내용 그대로! 실시간으로 공유됨 )
+
+docker run -it --name vol_dummy alicek106/volume_test
+cd /home
+ll
+cd testdir_2/
+ll
+(여기에 들어있다?)
+Ctrl pq
+
+docker run -it --name volume_overide -v /home/ec2-user/:/home/testdir_2 alicek106/volume_test
+(파일이 두곳 다 존재할 때 호스트에 있는 파일이 공유됨)
