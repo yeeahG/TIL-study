@@ -1,0 +1,49 @@
+# 1. client에서 hadoop 계정으로 로그인 
+# 2. start.sh로 hadoop 구동 
+
+# 3. mysql(mariadb)에 있는 table를 hdfs에 전달 
+sqoop import --connect jdbc:mysql://namenode:3306/stock --username root --password 1234 --table stock_master -m 1 --target-dir /sqoop/stock_master
+권한문제로 에러남.
+------------------
+ssh namenode
+mysql -uroot -p1234
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'namenode' IDENTIFIED BY '1234';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'client' IDENTIFIED BY '1234';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'datanode3' IDENTIFIED BY '1234';
+
+flush privileges;
+-------------------
+하고 다시하니까 됨.
+
+이미 폴더가 있다는 에러가 뜬다면
+hdfs dfs -rm -r /sqoop/stock_master 해서 폴더를 지워주고 다시 한다.
+
+hdfs dfs -cat /sqoop/stock_master/* 로 확인
+
+sqoop import --connect jdbc:mysql://namenode:3306/stock --username root --password 1234 --table naver_week_table3 -m 1 --target-dir /sqoop/naver_week_table3
+
+hdfs dfs -cat /sqoop/naver_week_table3/* 로 확인
+hdfs dfs -cat /sqoop/naver_week_table3/* | head
+hdfs dfs -cat /sqoop/naver_week_table3/* | more  <- 한줄한줄 엔터치면서 보기
+
+백그라운드로 pyspark 실행
+nohup  pyspark --master yarn --num-executors 3 & 
+
+# pyspark용 jupyter 접속 
+# 새 노트북 실행 
+
+master = spark.read.format("csv")\
+  .option("header", "false")\
+  .load("/sqoop/stock_master/*")
+
+# 업로드 : put 다운로드 : get 
+# mariadb-java-client-3.0.5.jar을 hdfs /user/hadoop/spark_jars 이 경로로 업로드!!! 
+hdfs dfs -put mariadb-java-client-3.0.5.jar /user/hadoop/spark_jars/
+
+# db에서 바로 가져오기 
+master_db = spark.read.format("jdbc")\
+      .option("url","jdbc:mysql://namenode:3306/stock")\
+      .option("driver","com.mysql.cj.jdbc.Driver")\
+      .option("dbtable","stock_master")\
+      .option("user","root").option("password","").load()
