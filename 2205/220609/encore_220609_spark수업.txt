@@ -1,0 +1,225 @@
+###############################################
+### 6월 10일 금요일 2시 10분에는 weekly 진행 ##
+###############################################
+
+# ec2 client 접속 
+# hadoop 계정으로 로그인 
+# cd ~ 
+# pyspark 실행 
+# 참고!!! 
+# nohup으로 실행하면 터미널 종료가 되어도 프로그램 계속 실행
+# spark 실행하기 전에 꼭 hadoop 구동하기!!! 
+	# start.sh 
+nohup pyspark --master yarn --num-executors 3 &
+
+# nohup으로 실행하면 nohup.out 파일에 기록이 남는다. 
+
+
+################ 프로세스 종료 ##################
+# 1. 내가 종료하고 싶은 프로세스를 찾는다.  
+# grep으로 python이 들어가는 문장을 찾는다. 
+ps -ef | grep python
+# 프로세스 죽이는 명령어 kill 
+kill -9 [프로세스ID]
+
+
+# hadoop UI 접속 
+http://namenode:50070
+# yarn UI 접속 
+http://secondnode:8088
+
+# hdfs 디렉터리 만들기 
+hdfs dfs -mkdir -p /data/flight-data/json
+
+
+df.withColumn("count2", col('count').cast('string'))
+
+
+df.where(col("count") < 2).where(col("ORIGIN_COUNTRY_NAME") != "Croatia")\
+  .show(2)
+
+# 고유값 (unique)
+df.select("ORIGIN_COUNTRY_NAME", "DEST_COUNTRY_NAME").distinct().count()
+
+
+# 랜덤값 만들기 
+seed = 5
+withReplacement = False
+fraction = 0.5
+df.sample(withReplacement, fraction, seed).count()
+
+
+
+# 데이터 분할하기 
+dataFrames = df.randomSplit([0.25, 0.75], seed)
+dataFrames[0].count() > dataFrames[1].count() # False 
+
+
+
+# 데이터 프레임 생성
+from pyspark.sql import Row
+schema = df.schema
+newRows = [
+  Row("New Country", "Other Country", 5),
+  Row("New Country 2", "Other Country 3", 1)
+]
+parallelizedRows = spark.sparkContext.parallelize(newRows)
+newDF = spark.createDataFrame(parallelizedRows, schema)
+
+
+# 합치기
+df.union(newDF)\
+  .where("count = 1")\
+  .where(col("ORIGIN_COUNTRY_NAME") != "United States")\
+  .show()
+  
+  
+
+# 정렬 
+df.sort("count").show(5)
+df.orderBy("count", "DEST_COUNTRY_NAME").show(5)
+df.orderBy(col("count").desc(), col("DEST_COUNTRY_NAME")).show(5)
+
+
+# 실습 파일 올리기 
+hdfs dfs -mkdir /data/retail-data/all/
+hdfs dfs -put online-retail-dataset.csv /data/retail-data/all/
+
+# 새로운 노트북 파일 오픈 
+df = spark.read.format("csv")\
+  .option("header", "true")\
+  .option("inferSchema", "true")\
+  .load("/data/retail-data/all/*.csv")\
+  .coalesce(5)
+  
+# 컬럼 count 
+from pyspark.sql.functions import count
+df.select(count("StockCode")).show()
+
+# countDistinct
+from pyspark.sql.functions import countDistinct
+df.select(countDistinct("StockCode")).show()
+
+# 근사치 확인하기
+# 사용 용도 -> 데이터셋이 크면... 전체 스캔하는데 시간 오래걸리기 때문에 
+# 대략적인 크기 파악(속도... )
+from pyspark.sql.functions import approx_count_distinctㅕㅜ
+df.select(approx_count_distinct("StockCode",0.1) ).show()
+
+
+# 컬럼별 first, last 데이터 확인 
+from pyspark.sql.functions import first, last
+df.select(first('invoiceno'), last('StockCode')).show()
+  
+  
+# dbms -> sqoop -> hdfs -> spark 처리   
+# 공유  폴더의 주식 데이터를 다운로드 
+# client 업로드(파일질라)
+unzip en_stock2.zip
+# client에서 namenode로 파일 전송 
+scp en_stock2.sql namenode:/home/hadoop/
+
+ssh namenode
+# mysql 접속 
+mysql -uroot -p[패스워드]
+# 123은 제 db패스워드입니다. 
+create database stock;
+commit;
+exit
+# db 복원 
+mysql -uroot -p123 stock < en_stock2.sql
+# db 백업 (참고)
+mysqldump -uroot -p123 stock > myback.sql
+
+# 접속해서 확인 
+mysql -uroot -p123 
+use stock;
+show tables;
+select count(*) from stock_day_table3;
+
+
+# sqoop으로 hdfs로 전송하기 
+# stock_day_table3
+# hdfs -> /sqoop/stock_day_table 전송 
+# 3시 10분까지 ~~ 
+
+
+
+
+# 오전 이어서 first, last 
+
+from pyspark.sql.functions import first, last
+df.select(first('stockcode')).show()
+
+
+
+from pyspark.sql.functions import first, last
+df.sort(col('StockCode').desc()).select(first('StockCode'), last('StockCode')).show() 
+# -> 여기서 col이 없다고 뜨는데 import하면 되는건가요? 넹 감사합니다
+
+
+# min, max
+from pyspark.sql.functions import min, max
+df.select(min("Quantity"), max("Quantity")).show()
+
+# sum 
+from pyspark.sql.functions import sum
+df.select(sum('Quantity')).show()
+
+# sumDistinct 
+from pyspark.sql.functions import sum_distinct 
+df.select(sum_distinct ('Quantity')).show()
+
+
+# avg
+
+from pyspark.sql.functions import sum, count, avg, expr
+
+df.select(
+    count("Quantity").alias("total_transactions"),
+    sum("Quantity").alias("total_purchases"),
+    avg("Quantity").alias("avg_purchases"),
+    expr("mean(Quantity)").alias("mean_purchases"))\
+  .selectExpr(
+    "total_purchases/total_transactions",
+    "avg_purchases",
+    "mean_purchases").show()
+
+
+# 분산, 표준편차 
+from pyspark.sql.functions import var_pop, stddev_pop
+from pyspark.sql.functions import var_samp, stddev_samp
+df.select(var_pop("Quantity"), var_samp("Quantity"),
+  stddev_pop("Quantity"), stddev_samp("Quantity")).show()
+
+# 참고 -> 불편분산
+
+# 상관관계, 공분산 
+from pyspark.sql.functions import corr, covar_pop, covar_samp
+df.select(corr("InvoiceNo", "Quantity"), covar_samp("InvoiceNo", "Quantity"),
+    covar_pop("InvoiceNo", "Quantity")).show()
+
+
+df.groupBy("InvoiceNo").agg(
+    count("Quantity").alias("quan"),
+    expr("count(Quantity)")).show()
+
+
+
+df.groupBy("InvoiceNo").agg(expr("avg(Quantity)"),expr("stddev_pop(Quantity)"))\
+  .show()
+
+
+# weelky -> 오전 ? 오후? 
+# 점심 이후에 2시 10부네 weekly
+# wbs 대비 진척사항 
+
+
+
+
+
+
+
+
+
+

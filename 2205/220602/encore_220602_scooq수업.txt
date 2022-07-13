@@ -1,0 +1,301 @@
+# import 
+# xml 형태로 데이터를 전송 
+import requests
+import xml.etree.ElementTree as ET
+import pandas as pd
+from urllib import parse
+import pymysql
+
+url = "http://openapi.airport.co.kr/service/rest/FlightScheduleList/getIflightScheduleList?serviceKey=WRvGBkn9UEtw%2BAsg0tYo210Etxvb1QEcAX%2BwfWvOxVGYJkh1CNZ%2FY4QFa0r7j4bhT4NjPu7z1i1ck8ZgsKMt2Q%3D%3D&schDate=20151005&numOfRows=5000"
+
+# 주소를 분해 
+result = parse.urlparse(url)
+
+# 주소 출력 
+result.geturl()
+
+# hostname 출력하기 
+result.geturl()
+
+# http ? https 
+result.scheme
+
+# 경로 출력
+result.path
+
+# 쿼리 출력 
+result.query 
+
+# 쿼리 분해 
+query_dict = parse.parse_qs(result.query)
+
+# 해당 api는 아래 url 참고 
+# https://www.data.go.kr/data/15000126/openapi.do
+
+
+# QA에 관심이 있는 분들만..
+# https://www.sten.or.kr/index.php
+
+# dict의 값을 변경 
+query_dict['schDate'] = ['20220531']
+
+parse.urlencode(query_dict, doseq = True)
+
+api_url = parse.ParseResult(scheme = result.scheme, netloc= result.hostname, path = result.path, 
+                  params = result.params, query = parse.urlencode(query_dict, doseq = True), fragment=result.fragment)
+
+url = parse.urlunparse(api_url)
+
+
+for date_ in [str(x).replace("-", "")[:8] for x in pd.date_range('2022-01-01', '2022-05-31')][:10]:
+    query_dict['schDate'] = [date_]
+    api_url = parse.ParseResult(scheme = result.scheme, netloc= result.hostname, path = result.path, 
+                  params = result.params, query = parse.urlencode(query_dict, doseq = True), fragment=result.fragment)
+    url = parse.urlunparse(api_url)
+    print(url)
+
+
+# xml 파싱
+r = requests.get(url)
+
+root = ET.fromstring(r.text)
+
+items = root.iter(tag='item')
+for element in items:
+    print("------------------------")
+    for x in element:
+        print(x.tag, x.text)
+        
+        
+items = root.iter(tag='item')
+total = list()
+for element in items:
+    air_dict = dict()
+    # 하나의 items 정보가 dict형태로 저장 
+    for x in element:
+        air_dict[x.tag] = x.text
+    total.append(air_dict)
+    
+    
+def get_air_info(root):
+    items = root.iter(tag='item')
+    total = list()
+    for element in items:
+        air_dict = dict()
+        # 하나의 items 정보가 dict형태로 저장 
+        for x in element:
+            air_dict[x.tag] = x.text
+        total.append(air_dict)
+    return pd.DataFrame(total)    
+    
+    
+air_total = []
+for date_ in [str(x).replace("-", "")[:8] for x in pd.date_range('2022-01-01', '2022-05-31')]:
+    query_dict['schDate'] = [date_]
+    api_url = parse.ParseResult(scheme = result.scheme, netloc= result.hostname, path = result.path, 
+                  params = result.params, query = parse.urlencode(query_dict, doseq = True), fragment=result.fragment)
+    url = parse.urlunparse(api_url)
+    r = requests.get(url)
+    root = ET.fromstring(r.text)
+    air_total.append(get_air_info(root))
+df = pd.concat(air_total)  
+
+
+# 진행상태 확인하는 모듈 
+from tqdm import tqdm_notebook
+air_total = []
+for date_ in tqdm_notebook([str(x).replace("-", "")[:8] for x in pd.date_range('2022-01-01', '2022-05-31')]):
+    query_dict['schDate'] = [date_]
+    api_url = parse.ParseResult(scheme = result.scheme, netloc= result.hostname, path = result.path, 
+                  params = result.params, query = parse.urlencode(query_dict, doseq = True), fragment=result.fragment)
+    url = parse.urlunparse(api_url)
+    r = requests.get(url)
+    root = ET.fromstring(r.text)
+    air_total.append(get_air_info(root))
+df = pd.concat(air_total)
+
+df.reset_index(drop=True, inplace=True)
+
+
+# DataFrame에서 해당 값이 있는지 확인 (확인 차원!!!)
+df2 = df.copy()
+df2.iloc[0,0] = 'null'
+df2[df2 == 'null'].notnull().sum()
+
+
+
+" ".join("2021-12-02T00:00:00+09:00".split("+")[0].split("T"))
+
+str(datetime.strptime("2021-12-02T00:00:00+09:00".split("+")[0], "%Y-%m-%dT%H:%M:%S"))
+
+df['internationalEddate'] = df['internationalEddate'].apply(lambda x : " ".join(x.split("+")[0].split("T")) )
+df['internationalStdate'] = df['internationalStdate'].apply(lambda x : " ".join(x.split("+")[0].split("T")) )
+
+
+
+
+# ec2 접속해서 namenode로 이동 
+mysql -u root -p
+
+create database sqoop;
+commit;
+# db에서 root가 외부 %에서 접속할 때 비밀번호 12345
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '12345';
+
+try:
+    con = pymysql.connect(host='52.79.243.213', user='root', port=3306, password='12345', db='sqoop', charset='utf8')
+    cur = con.cursor()
+except Exception as e:
+    print (e)
+
+
+create_table = """
+    CREATE TABLE airport_info (
+       `airlineKorean`        VARCHAR(20),
+        `airport`             VARCHAR(20), 
+        `city`                VARCHAR(20),
+        `internationalEddate` DATETIME,
+        `internationalFri`    VARCHAR(1),
+        `internationalIoType` VARCHAR(3),
+        `internationalMon`    VARCHAR(1),
+        `internationalNum`    VARCHAR(10),  
+        `internationalSat`    VARCHAR(1),
+        `internationalStdate` DATETIME,
+        `internationalSun`    VARCHAR(1),
+        `internationalThu`    VARCHAR(1),
+        `internationalTime`   TIME,
+        `internationalTue`    VARCHAR(1),
+        `internationalWed`    VARCHAR(1),
+        `year`                VARCHAR(4)
+    ) COLLATE='utf8mb4_general_ci'
+"""
+
+cur.execute(create_table)
+con.commit()
+
+
+sql = """INSERT INTO airport_info (airlineKorean, airport, city, internationalEddate, internationalFri, internationalIoType, internationalMon, 
+                              internationalNum, internationalSat, internationalStdate,
+                              internationalSun, internationalThu, internationalTime, internationalTue, internationalWed, year) VALUES
+         (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+"""
+
+df.drop(['airlineEnglish', 'airportCode', 'cityCode', 'flightPurpose'], axis=1, inplace=True)
+df['year'] = '2022'
+
+
+
+
+
+Q : 위에 코드에서 items = root.iter(tag='item')
+    여기서 iter 왜하는지 다시 설명해주실 수 있나요?
+    
+
+for row in tqdm_notebook(df.iterrows()):
+    try:
+        cur.execute(sql, row[1].tolist())
+    except Exception as e:
+        print(e)
+        break
+        
+        
+con.commit()
+
+
+# db 접속 후
+select count(*) from sqoop.airport_info;
++----------+
+| count(*) |
++----------+
+|    58720 |
++----------+
+-----------------------------------
+use sqoop;
+select count(*) from airport_info;
+
+#############################################
+# 지금 작업하는 곳!!! Client에서... 
+#############################################
+
+
+# sqoop 다운로드
+wget http://archive.apache.org/dist/sqoop/1.4.7/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz
+
+# 압축 풀기
+tar xvfz sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz
+
+# 폴더 이름 변경
+mv ./sqoop-1.4.7.bin__hadoop-2.6.0 ./sqoop
+
+# bashrc에 등록
+vim ~/.bashrc
+
+
+export SQOOP_HOME=/home/hadoop/sqoop
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin:$HIVE_HOME/bin:$SQOOP_HOME/bin
+
+
+# 저장 
+source ~/.bashrc
+
+===================================================
+export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.332.b09-2.el8_6.x86_64"
+export HADOOP_HOME=/home/hadoop/hadoop
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export HADOOP_YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+export HIVE_HOME=/home/hadoop/hive
+export SQOOP_HOME=/home/hadoop/sqoop
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin:$HIVE_HOME/bin:$SQOOP_HOME/bin
+===================================================
+
+# 오늘 날짜 공유 폴더에서 jar파일 3개 다운로드 
+# filezilla로 /home/hadoop/sqoop/lib 이동 
+# commons-lang3-3.4.jar 삭제 
+# 3개 파일 업로드 
+
+
+# mysql 권한설정(namenode)
+mysql -u root -p
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'namenode' IDENTIFIED BY '12345';
+flush privileges;
+
+# 다시 client 
+
+sqoop import --connect jdbc:mysql://namenode:3306/sqoop --username root --password 12345 --table airport_info -m 1 --target-dir /sqoop/airport_info
+
+# hdfs에 들어간 데이터 확인 
+hdfs dfs -cat /sqoop/airport_info/*
+ 
+
+sqoop import --connect jdbc:mysql://namenode:3306/sqoop --username root --password 12345 --table airport_info -m 1 --hive-import
+
+# hive 실행 
+select * from airport_info;
+select count(*) from airport_info;
+
+
+Q : 두개가 별개인거 맞나요?? 하나는 mysql db를 hdfs에 저장한거고 
+    --> /sqoop/airport_info 저장 
+   나머지는 hive에서 쓸수 있게 hive전용 db에 저장된건가요? 
+   -->  /user/hive/warehouse/airport_info 저장 
+
+
+sqoop import --connect jdbc:mysql://namenode:3306/sqoop?characterEncoding=UTF-8 \
+--username root \
+--password 12345 \
+--hive-import \
+--hive-table airport2 \
+--query "SELECT * FROM airport_info WHERE airlineKorean = '진에어' AND \$CONDITIONS " \
+--split-by internationalEddate  \
+--target-dir /sqoop/airport_tmp2 \
+--delete-target-dir \
+-m 1 
+
+
+
